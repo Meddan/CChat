@@ -41,12 +41,17 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 	ListOfChannels = State#server_st.channels,
 	io:format("created list of channels \n"),
 	ChannelToJoin = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
+	io:format("created channel to join \n"),
 	case ChannelToJoin of
 		%Channel doesn't exist
 		false ->
 			io:format("CHANNEL DOES NOT EXIST \n"),
 			%Create new channel and add the user to it.
-			{ok, State#server_st{channels = lists:append(State#server_st.channels, NewChannel = #channel{name = ChannelName, users = [UserID]})}};
+			NewChannel = #channel{name = ChannelName, users = [UserID]},
+			io:format(NewChannel.name),
+			NewChannelList = lists:append(NewChannel, ListOfChannels)
+			%Add the channel to the list of channels and return it.
+			{ok, State#server_st{channels = NewChannelList}};
 		% Channel exists.
 		true ->
 			io:format("CHANNEL EXISTS \n"),
