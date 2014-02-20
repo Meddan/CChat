@@ -39,7 +39,7 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 	% Check if channel exists
 	io:format("request join \n"),
 	ListOfChannels = State#server_st.channels,
-	io:format(ListOfChannels),
+	io:format("created list of channels \n"),
 	ChannelToJoin = lists:keyfind(ChannelName,1, ListOfChannels),
 	
 	case ChannelToJoin of
