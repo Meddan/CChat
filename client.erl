@@ -98,12 +98,9 @@ loop(St = #cl_st { gui = GUIName }, _MsgFromClient) ->
 % This function will take a message from the client and
 % decomposed in the parts needed to tell the GUI to display
 % it in the right chat room.
-decompose_msg({msg_from_GUI, Chatroom, String}) -> 
-    {msg_from_GUI, Chatroom, String};
-
 decompose_msg(_MsgFromClient) ->
     {"", "", ""}.
 
+
 initial_state(Nick, GUIName) ->
     #cl_st { gui = GUIName, nick = Nick }.
-
