@@ -27,7 +27,8 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 		not UserConnected ->
 			{{error, user_not_connected}, State};
 		true ->
-			{ok, State#server_st{users = lists:delete([{UserID,UserPID}], State#server_st.users)}}
+			NewUserList = lists:delete([{UserID,UserPID}], State#server_st.users),
+			{ok, State#server_st{users = NewUserList}}
 	end;
 
 %
