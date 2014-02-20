@@ -9,8 +9,8 @@ loop(St, _Msg) ->
 % User connecting to the server
 %
 request(State, {connect, {UserID,UserPID}}) ->
-	ConnectedIDs = lists:map(fun ({_, V}) -> V end, State#server_st.users),
-	ConnectedPIDs = lists:map(fun ({X, _}) -> X end, State#server_st.users),
+	ConnectedPIDs = lists:map(fun ({_, V}) -> V end, State#server_st.users),
+	ConnectedIDs = lists:map(fun ({X, _}) -> X end, State#server_st.users),
 	UserConnected = lists:member(UserID, ConnectedIDs) or lists:member(UserPID,ConnectedPIDs),
 	if
 		not UserConnected ->
@@ -24,9 +24,9 @@ request(State, {connect, {UserID,UserPID}}) ->
 % User disconnecting from the server
 %
 request(State, {disconnect, {UserID,UserPID}}) ->
-	ConnectedIDs = lists:map(fun ({_, V}) -> V end, State#server_st.users),
-	ConnectedPIDs = lists:map(fun ({X, _}) -> X end, State#server_st.users),
-	UserConnected = lists:member(UserID, ConnectedIDs) or lists:member(UserPID,ConnectedPIDs),
+	ConnectedPIDs = lists:map(fun ({_, V}) -> V end, State#server_st.users),
+	ConnectedIDs = lists:map(fun ({X, _}) -> X end, State#server_st.users),
+	UserConnected = lists:member(UserID, ConnectedIDs) and lists:member(UserPID,ConnectedPIDs),
 	if
 		not UserConnected ->
 			{{error, user_not_connected}, State};
