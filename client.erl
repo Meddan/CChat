@@ -12,7 +12,6 @@ loop(St, {connect, _Server}) ->
         {'EXIT', Reason} -> % There is no server like this
             {{error, server_not_reached, "Could not connect to server!"}, St};
         _Else ->
-            io:format("Waiting for server"),
             receive
                 {exit, Ref, Reason} -> % Server crashed
                     {'EXIT', "Server crashed"};
