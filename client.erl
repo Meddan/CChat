@@ -8,10 +8,11 @@
 %%%%%%%%%%%%%%%
 loop(St, {connect, _Server}) ->
     Ref = make_ref(),
-    case catch (list_to_atom(_Server) ! {request, self(), Ref, {connect, St#cl_st.nick}}) of
+    case catch (list_to_atom(_Server) ! {request, self(), Ref, {connect, {St#cl_st.nick, self()}}}) of
         {'EXIT', Reason} -> % There is no server like this
             {{error, server_not_reached, "Could not connect to server!"}, St};
         _Else ->
+            io:format("Waiting for server"),
             receive
                 {exit, Ref, Reason} -> % Server crashed
                     {'EXIT', "Server crashed"};
@@ -27,7 +28,7 @@ loop(St, {connect, _Server}) ->
 %%%%%%%%%%%%%%%
 loop(St, disconnect) ->
     Ref = make_ref(),
-    case catch list_to_atom(St#cl_st.server) ! {request, self(), Ref, {disconnect, St#cl_st.nick}} of
+    case catch list_to_atom(St#cl_st.server) ! {request, self(), Ref, {disconnect, {St#cl_st.nick, self()}}} of
         {'EXIT', Reason} -> % Server could not be reached
             {{error, server_not_reached, "Could not reach server"}, St};
         _Else ->
@@ -47,7 +48,7 @@ loop(St, disconnect) ->
 %%%%%%%%%%%%%%
 loop(St,{join,_Channel}) ->
     Ref = make_ref(),
-    list_to_atom(St#cl_st.server) ! {request, self(), Ref, {join, St#cl_st.nick, _Channel}},
+    list_to_atom(St#cl_st.server) ! {request, self(), Ref, {join, {St#cl_st.nick, self()}, _Channel}},
     receive
         {result, Ref, ok} -> % Join went ok
             {ok, St};
