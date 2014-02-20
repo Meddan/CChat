@@ -62,7 +62,8 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
 	{value, Channel} = lists:keysearch(ChannelName,1,State#server_st.channels),
 	ListOfUsers = Channel#channel.users,
-	[Pid ! {message, UserID, ChannelName, Token} || Pid <- ListOfUsers],
+	UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
+	[Pid ! {message, UserID, ChannelName, Token} || Pid <- UserPIDs],
 	{ok, State}.
 
 
