@@ -3,8 +3,8 @@
 
 -include_lib("./defs.hrl").
 
-loop(St, _Msg) -> 
-	{ok, St}.
+loop(St, _Msg) ->
+	request(St, _Msg).
 %
 % User connecting to the server
 %
