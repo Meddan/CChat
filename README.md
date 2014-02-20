@@ -1,1 +1,1 @@
-CChat
+CChats

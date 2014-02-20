@@ -4,12 +4,7 @@
 -include_lib("./defs.hrl").
 
 loop(St, _Msg) -> 
-	receive
-		{request, From, RefID, Data} ->	
-			{Result,NewState} = request(St, Data),
-			From ! {result, RefID, Result}
-	end,
-    loop(NewState, _Msg).
+	{ok, St}.
 %
 % User connecting to the server
 %
