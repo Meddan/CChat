@@ -38,12 +38,20 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 request(State, {join, {UserID,UserPID}, ChannelName}) ->
 	% Check if channel exists
 	io:format("request join \n"),
-	ChannelToJoin = lists:keysearch(ChannelName,1,State#server_st.channels),
+	ListOfChannels = State#server_st.channels,
+	io:format(ListOfChannels),
+	ChannelToJoin = lists:keyfind(ChannelName,1, ListOfChannels),
+	
 	case ChannelToJoin of
+		%Channel doesn't exist
+		false ->
+			io:format("CHANNEL DOES NOT EXIST \n"),
+			%Create new channel and add the user to it.
+			{ok, State#server_st{channels = lists:append(State#server_st.channels, NewChannel = #channel{name = ChannelName, users = [UserID]})}};
 		% Channel exists.
-		{value, Tuple} ->
+		true ->
 			io:format("CHANNEL EXISTS \n"),
-			case lists:member(UserID, Tuple) of
+			case lists:member(UserID, ChannelToJoin.users) of
 				%User is not a member of the channel
 				false ->
 					io:format("USER NOT IN CHANNEL \n"),
@@ -54,12 +62,8 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 
 				% If the user is already a member of the channel.
 				true -> io:format("USER IN CHANNEL \n"), {{error,user_already_joined}, State}
-			end;
-		%Channel doesn't exist
-		false ->
-			io:format("CHANNEL DOES NOT EXIST \n"),
-			%Create new channel and add the user to it.
-			{ok, State#server_st{channels = lists:append(State#server_st.channels, NewChannel = #channel{name = ChannelName, users = [UserID]})}}
+			end
+		
 	end;
 %
 % User sending a message to a channel
