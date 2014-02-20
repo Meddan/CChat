@@ -51,14 +51,14 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 		% Channel exists.
 		true ->
 			io:format("CHANNEL EXISTS \n"),
-			case lists:member(UserID, ChannelToJoin.users) of
+			case lists:member(UserID, ChannelToJoin#channel.users) of
 				%User is not a member of the channel
 				false ->
 					io:format("USER NOT IN CHANNEL \n"),
 					%Add the user to the channel
-					ChangedChannel = Tuple#channel{users = lists:append(Tuple#channel.users, [UserID])},
+					ChangedChannel = ChannelToJoin#channel{users = lists:append(ChannelToJoin#channel.users, [UserID])},
 					%Remove the old reference of the channel and add a new one.
-					{ok, State#server_st{channels = lists:append(lists:delete(Tuple, State#server_st.channels), [ChangedChannel])}};
+					{ok, State#server_st{channels = lists:append(lists:delete(ChannelToJoin, State#server_st.channels), [ChangedChannel])}};
 
 				% If the user is already a member of the channel.
 				true -> io:format("USER IN CHANNEL \n"), {{error,user_already_joined}, State}
