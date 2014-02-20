@@ -18,7 +18,7 @@ loop(St, {connect, _Server}) ->
                 {result, Ref, ok_connected} -> % Connected
                     {ok, St#cl_st{server = _Server}};
                 {result, Ref, {error, user_already_connected}} -> % Could not connect
-                    {{error, user_already_connected, "User already connected"}, St}
+                    {{error, user_already_connected, "User with that name already connected"}, St}
             end
     end;
 
