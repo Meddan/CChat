@@ -53,11 +53,11 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 			%Create new channel and add the user to it.
 			NewChannel = #channel{name = ChannelName, users = [UserID]},
 			io:format(NewChannel#channel.name),
-			NewChannelList = lists:append(NewChannel, ListOfChannels),
+			NewChannelList = lists:append([NewChannel], ListOfChannels),
 			%Add the channel to the list of channels and return it.
 			{ok, State#server_st{channels = NewChannelList}};
 		% Channel exists.
-		true ->
+		_asd ->
 			io:format("CHANNEL EXISTS \n"),
 			case lists:member(UserID, ChannelToJoin#channel.users) of
 				%User is not a member of the channel
@@ -73,6 +73,20 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 			end
 		
 	end;
+%
+% User leaving a channel.
+%
+request(State, {leave, {UserID, UserPID}, ChannelName}) ->
+	ListOfChannels = State#server_st.channels,
+	ChannelToLeave = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
+	case lists:member(UserID, ChannelToLeave#channel.users) of 
+		false ->
+			{{error, user_not_joined}, State};
+		true ->
+			ChangedChannel = ChannelToJoin#channel{users = lists:delete([UserID], ChannelToJoin#channel.users)},
+			{ok, State#server_st{channels = lists:append(lists:delete(ChannelToJoin, State#server_st.channels), [ChangedChannel])}}
+	end;
+
 %
 % User sending a message to a channel
 %
