@@ -72,8 +72,14 @@ loop(St, {leave, _Channel}) ->
 %%% Sending messages
 %%%%%%%%%%%%%%%%%%%%%
 loop(St, {msg_from_GUI, _Channel, _Msg}) ->
-    {ok, St} ;
-
+    Ref = make_ref(),
+    list_to_atom(St#cl_st.server) ! {request, self(), Ref, {message, {St#cl_st.nick, self()}, _Channel, _Msg}},
+    receive
+        {result, Ref, ok} ->
+            {ok, St};
+        {result, Ref, {error, user_not_joined}} ->
+            {{error, user_not_joined, "You have not joined this channel!"}, St}
+    end;
 
 %%%%%%%%%%%%%%
 %%% WhoIam
