@@ -51,7 +51,7 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 		false ->
 			io:format("CHANNEL DOES NOT EXIST \n"),
 			%Create new channel and add the user to it.
-			NewChannel = #channel{name = ChannelName, users = [UserID]},
+			NewChannel = #channel{name = ChannelName, users = [{UserID,UserPID}]},
 			io:format(NewChannel#channel.name),
 			NewChannelList = lists:append([NewChannel], ListOfChannels),
 			%Add the channel to the list of channels and return it.
@@ -59,12 +59,12 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 		% Channel exists.
 		_asd ->
 			io:format("CHANNEL EXISTS \n"),
-			case lists:member(UserID, ChannelToJoin#channel.users) of
+			case lists:member({UserID,UserPID}, ChannelToJoin#channel.users) of
 				%User is not a member of the channel
 				false ->
 					io:format("USER NOT IN CHANNEL \n"),
 					%Add the user to the channel
-					ChangedChannel = ChannelToJoin#channel{users = lists:append(ChannelToJoin#channel.users, [UserID])},
+					ChangedChannel = ChannelToJoin#channel{users = lists:append(ChannelToJoin#channel.users, [{UserID,UserPID}])},
 					%Remove the old reference of the channel and add a new one.
 					{ok, State#server_st{channels = lists:append(lists:delete(ChannelToJoin, State#server_st.channels), [ChangedChannel])}};
 
@@ -79,11 +79,11 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 request(State, {leave, {UserID, UserPID}, ChannelName}) ->
 	ListOfChannels = State#server_st.channels,
 	ChannelToLeave = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
-	case lists:member(UserID, ChannelToLeave#channel.users) of 
+	case lists:member({UserID,UserPID}, ChannelToLeave#channel.users) of 
 		false ->
 			{{error, user_not_joined}, State};
 		true ->
-			ChangedChannel = ChannelToLeave#channel{users = lists:delete([UserID], ChannelToLeave#channel.users)},
+			ChangedChannel = ChannelToLeave#channel{users = lists:delete([{UserID,UserPID}], ChannelToLeave#channel.users)},
 			{ok, State#server_st{channels = lists:append(lists:delete(ChannelToLeave, State#server_st.channels), [ChangedChannel])}}
 	end;
 
