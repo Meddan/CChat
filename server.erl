@@ -81,9 +81,12 @@ request(State, {leave, {UserID, UserPID}, ChannelName}) ->
 	ChannelToLeave = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
 	case lists:member({UserID,UserPID}, ChannelToLeave#channel.users) of 
 		false ->
+			io:format("USER TRIED LEAVING CHANNEL THEY HAVEN'T JOINED \n"),
 			{{error, user_not_joined}, State};
 		true ->
+			io:format("USER LEAVING CHANNEL \n"),
 			ChangedChannel = ChannelToLeave#channel{users = lists:delete([{UserID,UserPID}], ChannelToLeave#channel.users)},
+			io:format("USER REMOVED FROM CHANNEL \n"),
 			{ok, State#server_st{channels = lists:append(lists:delete(ChannelToLeave, State#server_st.channels), [ChangedChannel])}}
 	end;
 
