@@ -16,7 +16,7 @@ loop(St, {connect, _Server}) ->
                 {exit, Ref, Reason} -> % Server crashed
                     {'EXIT', "Server crashed"};
                 {result, Ref, ok_connected} -> % Connected
-                    {ok, St#cl_st{server = _Server}};
+                    {ok, St#cl_st{server = _Server, connected = true}};
                 {result, Ref, {error, user_already_connected}} -> % Could not connect
                     {{error, user_already_connected, "User with that name already connected"}, St}
             end
@@ -33,7 +33,7 @@ loop(St, disconnect) ->
         _Else ->
             receive
                 {result, Ref, ok} -> % Disconnected
-                    {ok, St};
+                    {ok, St#cl_st{connected = false}};
                 {result, Ref, {error, user_not_connected}} -> % User was never connected
                     {{error, user_not_connected, "User not connected"}, St};
                 {result, Ref, {error, leave_channels_first}} -> % User hasn't left the channels first
@@ -91,7 +91,12 @@ loop(St, whoiam) ->
 %%% Nick
 %%%%%%%%%%
 loop(St,{nick,_Nick}) ->
-    {ok, St#cl_st{nick = _Nick}} ;
+    if
+        not St#cl_st.connected ->
+            {ok, St#cl_st{nick = _Nick}} ;
+        true ->
+            {{error, nick_change_error, "You can't change nickname while connected!"}, St}
+    end;
 
 %%%%%%%%%%%%%
 %%% Debug
@@ -116,4 +121,4 @@ decompose_msg(_MsgFromClient) ->
 
 
 initial_state(Nick, GUIName) ->
-    #cl_st { gui = GUIName, nick = Nick }.
+    #cl_st { gui = GUIName, nick = Nick, connected = false }.
