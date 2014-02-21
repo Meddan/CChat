@@ -91,10 +91,15 @@ request(State, {leave, {UserID, UserPID}, ChannelName}) ->
 % User sending a message to a channel
 %
 request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
+	io:format("Gonna send the message \n"),
 	{value, Channel} = lists:keysearch(ChannelName,1,State#server_st.channels),
+	io:format("keysearch ok in message \n"),
 	ListOfUsers = Channel#channel.users,
+	io:format("list of users created \n"),
 	UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
+	io:format("list of pids created \n"),
 	[Pid ! {message, UserID, ChannelName, Token} || Pid <- UserPIDs],
+	io:format("messages sent \n"),
 	{ok, State}.
 
 
