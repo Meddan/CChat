@@ -83,8 +83,8 @@ request(State, {leave, {UserID, UserPID}, ChannelName}) ->
 		false ->
 			{{error, user_not_joined}, State};
 		true ->
-			ChangedChannel = ChannelToJoin#channel{users = lists:delete([UserID], ChannelToJoin#channel.users)},
-			{ok, State#server_st{channels = lists:append(lists:delete(ChannelToJoin, State#server_st.channels), [ChangedChannel])}}
+			ChangedChannel = ChannelToLeave#channel{users = lists:delete([UserID], ChannelToLeave#channel.users)},
+			{ok, State#server_st{channels = lists:append(lists:delete(ChannelToLeave, State#server_st.channels), [ChangedChannel])}}
 	end;
 
 %
