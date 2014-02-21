@@ -85,7 +85,7 @@ request(State, {leave, {UserID, UserPID}, ChannelName}) ->
 			{{error, user_not_joined}, State};
 		true ->
 			io:format("USER LEAVING CHANNEL \n"),
-			ChangedChannel = ChannelToLeave#channel{users = lists:delete([{UserID,UserPID}], ChannelToLeave#channel.users)},
+			ChangedChannel = ChannelToLeave#channel{users = lists:delete({UserID,UserPID}, ChannelToLeave#channel.users)},
 			io:format("USER REMOVED FROM CHANNEL \n"),
 			{ok, State#server_st{channels = lists:append(lists:delete(ChannelToLeave, State#server_st.channels), [ChangedChannel])}}
 	end;
