@@ -8,21 +8,17 @@
 %%%%%%%%%%%%%%%
 loop(St, {connect, _Server}) ->
     Ref = make_ref(),
-    NewSt = St#cl_st{messagePID = spawn(fun() -> receive_message(St) end)}, % Spawn help process to listen for messages
-    case catch (list_to_atom(_Server) ! {request, self(), Ref, {connect, {NewSt#cl_st.nick, self(), NewSt#cl_st.messagePID}}}) of
+    case catch (list_to_atom(_Server) ! {request, self(), Ref, {connect, {St#cl_st.nick, self()}}}) of
         {'EXIT', Reason} -> % There is no server like this
-            NewSt#cl_st.messagePID ! stop,
-            {{error, server_not_reached, "Could not connect to server!"}, NewSt};
+            {{error, server_not_reached, "Could not connect to server!"}, St};
         _Else ->
             receive
                 {exit, Ref, Reason} -> % Server crashed
-                    NewSt#cl_st.messagePID ! stop,
                     {'EXIT', "Server crashed"};
                 {result, Ref, ok_connected} -> % Connected
-                    {ok, NewSt#cl_st{server = _Server, connected = true}};
+                    {ok, St#cl_st{server = _Server, connected = true}};
                 {result, Ref, {error, user_already_connected}} -> % Could not connect
-                    NewSt#cl_st.messagePID ! stop,
-                    {{error, user_already_connected, "User with that name already connected"}, NewSt}
+                    {{error, user_already_connected, "User with that name already connected"}, St}
             end
     end;
 
@@ -33,12 +29,10 @@ loop(St, disconnect) ->
     Ref = make_ref(),
     case catch list_to_atom(St#cl_st.server) ! {request, self(), Ref, {disconnect, {St#cl_st.nick, self()}}} of
         {'EXIT', Reason} -> % Server could not be reached
-            St#cl_st.messagePID ! stop,
             {{error, server_not_reached, "Could not reach server"}, St};
         _Else ->
             receive
                 {result, Ref, ok} -> % Disconnected
-                    St#cl_st.messagePID ! stop,
                     {ok, St#cl_st{connected = false}};
                 {result, Ref, {error, user_not_connected}} -> % User was never connected
                     {{error, user_not_connected, "User not connected"}, St};
@@ -114,6 +108,7 @@ loop(St, debug) ->
 %%%% Incoming message
 %%%%%%%%%%%%%%%%%%%%%
 loop(St = #cl_st { gui = GUIName }, _MsgFromClient) ->
+    io:format("Receiving message"),
     {Channel, Name, Msg} = decompose_msg(_MsgFromClient),
     gen_server:call(list_to_atom(GUIName), {msg_to_GUI, Channel, Name++"> "++Msg}),
     {ok, St}.
