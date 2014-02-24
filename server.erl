@@ -109,7 +109,8 @@ request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
 
 	UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
 	io:format("list of pids created \n"),
-	[Pid ! {message_from_server, UserID, ChannelName, Token} || Pid <- UserPIDs],
+	%[Pid ! {message_from_server, UserID, ChannelName, Token} || Pid <- UserPIDs],
+	genserver:request(UserPID, {message_from_server, ChannelName, UserID, Token}),
 	io:format("messages sent \n"),
 	{ok, State}.
 
