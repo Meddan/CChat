@@ -113,20 +113,6 @@ loop(St = #cl_st { gui = GUIName }, _MsgFromClient) ->
     gen_server:call(list_to_atom(GUIName), {msg_to_GUI, Channel, Name++"> "++Msg}),
     {ok, St}.
 
-receive_message(St) ->
-    receive
-        {message, UserID, ChannelName, Token} ->
-            if
-                UserID /= St#cl_st.nick ->
-                    gen_server:call(list_to_atom(St#cl_st.gui), {msg_to_GUI, ChannelName, UserID++"> "++Token}),
-                    receive_message(St);
-                true ->
-                    receive_message(St)
-            end;
-        stop ->
-            ok
-    end.
-
 
 % This function will take a message from the client and
 % decomposed in the parts needed to tell the GUI to display
