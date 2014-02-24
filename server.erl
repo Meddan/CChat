@@ -8,13 +8,15 @@ loop(St, _Msg) ->
 %
 % User connecting to the server
 %
-request(State, {connect, {UserID,UserPID}}) ->
+request(State, {connect, {UserID,UserPID}}) -> %,MessagePID
 	ConnectedPIDs = lists:map(fun ({_, V}) -> V end, State#server_st.users),
 	ConnectedIDs = lists:map(fun ({X, _}) -> X end, State#server_st.users),
 	UserConnected = lists:member(UserID, ConnectedIDs) or lists:member(UserPID,ConnectedPIDs),
 	if
 		not UserConnected ->
-			{ok_connected, State#server_st{users = lists:append([{UserID,UserPID}], State#server_st.users)}};
+			NewUserList = lists:append([{UserID,UserPID}],State#server_st.users),
+			%NewMessageList = lists:append([{UserID,MessagePID}], State#server_st.messagepids),
+			{ok_connected, State#server_st{ users = NewUserList} }; %, messagepids = NewMessageList
 		true ->
 			{{error, user_already_connected}, State}
 	end;
@@ -32,7 +34,9 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 			{{error, user_not_connected}, State};
 		true ->
 			NewUserList = lists:delete({UserID,UserPID}, State#server_st.users),
-			{ok, State#server_st{users = NewUserList}}
+			%UserPIDtoDelete = lists:keysearch(UserID, 1, State#server_st.messagepids),
+			%NewMessageList = lists:delete(UserPIDtoDelete, State#server_st.users),
+			{ok, State#server_st{users = NewUserList}} %, messagepids = NewMessageList
 	end;
 
 %
@@ -51,7 +55,7 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 		false ->
 			io:format("CHANNEL DOES NOT EXIST \n"),
 			%Create new channel and add the user to it.
-			NewChannel = #channel{name = ChannelName, users = [{UserID,UserPID}]},
+			NewChannel = #channel{name = ChannelName, users = [{UserID,UserPID}] },
 			io:format(NewChannel#channel.name),
 			NewChannelList = lists:append([NewChannel], ListOfChannels),
 			%Add the channel to the list of channels and return it.
@@ -100,13 +104,14 @@ request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
 	io:format("keysearch ok in message \n"),
 	ListOfUsers = ChannelToMessage#channel.users,
 	io:format("list of users created \n"),
+	UserIDs = lists:map(fun ({X, _}) -> X end, ListOfUsers),
+	%HelperPIDs = [],
+
 	UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
 	io:format("list of pids created \n"),
-	[Pid ! {message, UserID, ChannelName, Token} || Pid <- UserPIDs],
+	[Pid ! {message_from_server, UserID, ChannelName, Token} || Pid <- UserPIDs],
 	io:format("messages sent \n"),
 	{ok, State}.
 
-
-
 initial_state(_Server) ->
-    #server_st{users=[], channels = []}.
+    #server_st{users=[], channels = []}. %, messagepids=[]

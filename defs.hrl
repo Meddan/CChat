@@ -11,4 +11,4 @@
 % server process. 
 % 
 -record (channel, {name = "", users=[]}).
--record (server_st, {users=[], channels=[]}).
+-record (server_st, {users=[], channels=[]}). %, messagepids=[]

@@ -136,8 +136,9 @@ receive_message(St) ->
 % This function will take a message from the client and
 % decomposed in the parts needed to tell the GUI to display
 % it in the right chat room.
-decompose_msg(_MsgFromClient) ->
-    {"", "", ""}.
+decompose_msg({message_from_server, Nick, Channel, Token}) ->
+    io:format("message_from_server"),
+    {Channel, Nick, Token}.
 
 
 initial_state(Nick, GUIName) ->
