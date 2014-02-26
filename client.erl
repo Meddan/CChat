@@ -60,8 +60,7 @@ loop(St,{join,_Channel}) ->
 %%%%%%%%%%%%%%%
 loop(St, {leave, _Channel}) ->
     Ref = make_ref(),
-    list_to_atom(St#cl_st.server) ! {request, self(), Ref, {leave, {St#cl_st.nick, self()}, _Channel}},
-    receive
+    case genserver:request( list_to_atom(St#cl_st.server), {request, self(), Ref, {leave, {St#cl_st.nick, self()}, _Channel}}) of 
         {result, Ref, ok} ->
             {ok, St};
         {result, Ref, {error, user_not_joined}} ->
@@ -73,11 +72,10 @@ loop(St, {leave, _Channel}) ->
 %%%%%%%%%%%%%%%%%%%%%
 loop(St, {msg_from_GUI, _Channel, _Msg}) ->
     Ref = make_ref(),
-    list_to_atom(St#cl_st.server) ! {request, self(), Ref, {message, {St#cl_st.nick, self()}, _Channel, _Msg}},
-    receive
-        {result, Ref, ok} ->
+    case genserver:request(list_to_atom(St#cl_st.server), {message, {St#cl_st.nick, self()}, _Channel, _Msg}) of
+        ok ->
             {ok, St};
-        {result, Ref, {error, user_not_joined}} ->
+        {error, user_not_joined} ->
             {{error, user_not_joined, "You have not joined this channel!"}, St}
     end;
 
@@ -107,18 +105,22 @@ loop(St, debug) ->
 %%%%%%%%%%%%%%%%%%%%%
 %%%% Incoming message
 %%%%%%%%%%%%%%%%%%%%%
-loop(St = #cl_st { gui = GUIName }, _MsgFromClient) ->
-    io:format("Receiving message"),
+loop(St , _MsgFromClient) ->
+    This = self(),
+    io:fwrite("Receiving message ~w~n", [This]),
     {Channel, Name, Msg} = decompose_msg(_MsgFromClient),
-    gen_server:call(list_to_atom(GUIName), {msg_to_GUI, Channel, Name++"> "++Msg}),
+    gen_server:call(list_to_atom(St#cl_st.gui), {msg_to_GUI, Channel, Name++"> "++Msg}),
+    io:format("Should be done writing.\n"),
     {ok, St}.
 
 
 % This function will take a message from the client and
 % decomposed in the parts needed to tell the GUI to display
 % it in the right chat room.
-decompose_msg({message_from_server, Nick, Channel, Token}) ->
-    io:format("message_from_server"),
+decompose_msg({message_from_server, Channel, Nick, Token}) ->
+    io:format("message_from_server \n"),
+    io:format("message, nick: ~n~w", [Nick]),
+    io:format("message, channel: ~n~w", [Channel]),
     {Channel, Nick, Token}.
 
 

@@ -33,10 +33,23 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 		not UserConnected ->
 			{{error, user_not_connected}, State};
 		true ->
-			NewUserList = lists:delete({UserID,UserPID}, State#server_st.users),
+			io:format("user is connected \n"),
+			UserInChannel = [ [lists:member({UserID,UserPID}, Chan#channel.users)] || Chan <- State#server_st.channels],
+			[io:fwrite("~n we have: ~w ~n", Bool) || Bool <- UserInChannel],
+			io:fwrite("~n listmember: ~w~n", [lists:member([true], UserInChannel)] ),
+			case catch lists:member([true], UserInChannel) of
+				true -> 
+					io:format("errors :D:D:D"),
+					{error, leave_channels_first};
+				false ->
+					io:format("user not in a channel"),
+					NewUserList = lists:delete({UserID,UserPID}, State#server_st.users),
+					{ok, State#server_st{users = NewUserList}}
+
+			end		
 			%UserPIDtoDelete = lists:keysearch(UserID, 1, State#server_st.messagepids),
 			%NewMessageList = lists:delete(UserPIDtoDelete, State#server_st.users),
-			{ok, State#server_st{users = NewUserList}} %, messagepids = NewMessageList
+			%, messagepids = NewMessageList
 	end;
 
 %
@@ -109,8 +122,15 @@ request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
 
 	UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
 	io:format("list of pids created \n"),
-	%[Pid ! {message_from_server, UserID, ChannelName, Token} || Pid <- UserPIDs],
-	genserver:request(UserPID, {message_from_server, ChannelName, UserID, Token}),
+	io:fwrite("~npid: ~w~n", [UserPID]),
+	io:format("~nchannelname: ~w~n", [ChannelName]),
+	io:format("~nuserid: ~w~n", [UserID]),
+	io:format("~ntoken: ~w~n", [Token]),
+	io:format("~nUserPIDS: ~w~n", [UserPIDs]),
+
+	[genserver:request(Pid, {message_from_server, ChannelName, UserID, Token}) || Pid <- UserPIDs, Pid /= UserPID],
+	
+
 	io:format("messages sent \n"),
 	{ok, State}.
 
