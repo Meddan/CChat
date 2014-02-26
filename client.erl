@@ -20,16 +20,21 @@ loop(St, {connect, _Server}) ->
 %%%% Disconnect
 %%%%%%%%%%%%%%%
 loop(St, disconnect) ->
-    case catch genserver:request(list_to_atom(St#cl_st.server), {disconnect, {St#cl_st.nick, self()}}) of
-        {'EXIT', Reason} -> % Server could not be reached
-            {{error, server_not_reached, "Could not reach server"}, St};
-        ok -> % Disconnected
-            {ok, St#cl_st{connected = false}};
-        {error, user_not_connected} -> % User was never connected
-            {{error, user_not_connected, "User not connected"}, St};
-        {error, leave_channels_first} -> % User hasn't left the channels first
-            {{error, leave_channels_first, "Leave channels before disconnecting"}, St}
+    case St#cl_st.connected of
+        true -> % if connected
+            case catch genserver:request(list_to_atom(St#cl_st.server), {disconnect, {St#cl_st.nick, self()}}) of
+                {'EXIT', Reason} -> % Server could not be reached
+                    {{error, server_not_reached, "Could not reach server"}, St};
+                ok -> % Disconnected
+                    {ok, St#cl_st{connected = false}};
+                {error, leave_channels_first} -> % User hasn't left the channels first
+                    {{error, leave_channels_first, "Leave channels before disconnecting"}, St}
+            end;
+        false -> % if not connected
+            {{error, user_not_connected, "User not connected"}, St}
     end;
+
+
 
 
 %%%%%%%%%%%%%%
@@ -48,9 +53,9 @@ loop(St,{join,_Channel}) ->
 %%%%%%%%%%%%%%%
 loop(St, {leave, _Channel}) ->
     case genserver:request( list_to_atom(St#cl_st.server), {leave, {St#cl_st.nick, self()}, _Channel}) of 
-        ok ->
+        ok -> % User is in channel
             {ok, St};
-        {error, user_not_joined} ->
+        {error, user_not_joined} -> % User is not in channel
             {{error, user_not_joined, "You have not joined this channel!"}, St}
     end;
 
@@ -59,9 +64,9 @@ loop(St, {leave, _Channel}) ->
 %%%%%%%%%%%%%%%%%%%%%
 loop(St, {msg_from_GUI, _Channel, _Msg}) ->
     case genserver:request(list_to_atom(St#cl_st.server), {message, {St#cl_st.nick, self()}, _Channel, _Msg}) of
-        ok ->
+        ok -> % User has joined channel in which it writes
             {ok, St};
-        {error, user_not_joined} ->
+        {error, user_not_joined} -> % User has not joined channel
             {{error, user_not_joined, "You have not joined this channel!"}, St}
     end;
 
