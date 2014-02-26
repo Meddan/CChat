@@ -10,8 +10,6 @@ loop(St, {connect, _Server}) ->
     case catch (genserver:request(list_to_atom(_Server), {connect, {St#cl_st.nick, self()}})) of
         {'EXIT', Reason} -> % There is no server like this
             {{error, server_not_reached, "Could not reach server!"}, St};
-        {exit, Ref, Reason} -> % Server crashed
-            {'EXIT', "Server crashed"};
         ok_connected -> % Connected
             {ok, St#cl_st{server = _Server, connected = true}};
         {error, user_already_connected} -> % Could not connect
@@ -22,7 +20,6 @@ loop(St, {connect, _Server}) ->
 %%%% Disconnect
 %%%%%%%%%%%%%%%
 loop(St, disconnect) ->
-    Ref = make_ref(),
     case catch genserver:request(list_to_atom(St#cl_st.server), {disconnect, {St#cl_st.nick, self()}}) of
         {'EXIT', Reason} -> % Server could not be reached
             {{error, server_not_reached, "Could not reach server"}, St};
@@ -39,7 +36,6 @@ loop(St, disconnect) ->
 %%% Join
 %%%%%%%%%%%%%%
 loop(St,{join,_Channel}) ->
-    Ref = make_ref(),
     case genserver:request(list_to_atom(St#cl_st.server), {join, {St#cl_st.nick, self()}, _Channel}) of
         ok -> % Join went ok
             {ok, St};
@@ -51,7 +47,6 @@ loop(St,{join,_Channel}) ->
 %%%% Leave
 %%%%%%%%%%%%%%%
 loop(St, {leave, _Channel}) ->
-    Ref = make_ref(),
     case genserver:request( list_to_atom(St#cl_st.server), {leave, {St#cl_st.nick, self()}, _Channel}) of 
         ok ->
             {ok, St};
@@ -63,7 +58,6 @@ loop(St, {leave, _Channel}) ->
 %%% Sending messages
 %%%%%%%%%%%%%%%%%%%%%
 loop(St, {msg_from_GUI, _Channel, _Msg}) ->
-    Ref = make_ref(),
     case genserver:request(list_to_atom(St#cl_st.server), {message, {St#cl_st.nick, self()}, _Channel, _Msg}) of
         ok ->
             {ok, St};
