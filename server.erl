@@ -15,8 +15,7 @@ request(State, {connect, {UserID,UserPID}}) -> %,MessagePID
 	if
 		not UserConnected ->
 			NewUserList = lists:append([{UserID,UserPID}],State#server_st.users),
-			%NewMessageList = lists:append([{UserID,MessagePID}], State#server_st.messagepids),
-			{ok_connected, State#server_st{ users = NewUserList} }; %, messagepids = NewMessageList
+			{ok_connected, State#server_st{ users = NewUserList} };
 		true ->
 			{{error, user_already_connected}, State}
 	end;
@@ -30,7 +29,7 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 	ConnectedIDs = lists:map(fun ({X, _}) -> X end, State#server_st.users),
 	UserConnected = lists:member(UserID, ConnectedIDs) and lists:member(UserPID,ConnectedPIDs),
 	if
-		not UserConnected ->
+		not UserConnected ->	%if the user isn't connected.
 			{{error, user_not_connected}, State};
 		true ->
 			UserInChannel = [ [lists:member({UserID,UserPID}, Chan#channel.users)] || Chan <- State#server_st.channels],
@@ -99,14 +98,15 @@ request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
 		false ->
 			{{error, user_not_joined}, State};
 		true -> 
+			spawn( fun() -> 
 			ListOfUsers = ChannelToMessage#channel.users,
 			UserIDs = lists:map(fun ({X, _}) -> X end, ListOfUsers),
 			UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
 
-			[genserver:request(Pid, {message_from_server, ChannelName, UserID, Token}) || Pid <- UserPIDs, Pid /= UserPID],
+			[genserver:request(Pid, {message_from_server, ChannelName, UserID, Token}) || Pid <- UserPIDs, Pid /= UserPID] end),
 			{ok, State}
 	end.
 	
-
+%Creates the initial state of the server
 initial_state(_Server) ->
     #server_st{users=[], channels = []}. %, messagepids=[]
