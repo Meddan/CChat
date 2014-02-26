@@ -40,7 +40,7 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 			case catch lists:member([true], UserInChannel) of
 				true -> 
 					io:format("errors :D:D:D"),
-					{error, leave_channels_first};
+					{{error, leave_channels_first}, State};
 				false ->
 					io:format("user not in a channel"),
 					NewUserList = lists:delete({UserID,UserPID}, State#server_st.users),
@@ -114,25 +114,31 @@ request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
 	ListOfChannels = State#server_st.channels,
 	io:format("Gonna send the message \n"),
 	ChannelToMessage = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
-	io:format("keysearch ok in message \n"),
-	ListOfUsers = ChannelToMessage#channel.users,
-	io:format("list of users created \n"),
-	UserIDs = lists:map(fun ({X, _}) -> X end, ListOfUsers),
+	case catch lists:member({UserID,UserPID}, ChannelToMessage#channel.users) of
+		false ->
+			io:format("ASHDJAFHJKAFNKNASFKNSFKNSAKFNKJASFNKJSNFKJNSFKJSNFKJANSFKANSFKJNSJKNSFJKNASKFJNSAKFJN"),
+			{{error, user_not_joined}, State};
+		true -> io:format("keysearch ok in message \n"),
+			ListOfUsers = ChannelToMessage#channel.users,
+			io:format("list of users created \n"),
+			UserIDs = lists:map(fun ({X, _}) -> X end, ListOfUsers),
 	%HelperPIDs = [],
 
-	UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
-	io:format("list of pids created \n"),
-	io:fwrite("~npid: ~w~n", [UserPID]),
-	io:format("~nchannelname: ~w~n", [ChannelName]),
-	io:format("~nuserid: ~w~n", [UserID]),
-	io:format("~ntoken: ~w~n", [Token]),
-	io:format("~nUserPIDS: ~w~n", [UserPIDs]),
+			UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
+			io:format("list of pids created \n"),
+			io:fwrite("~npid: ~w~n", [UserPID]),
+			io:format("~nchannelname: ~w~n", [ChannelName]),
+			io:format("~nuserid: ~w~n", [UserID]),
+			io:format("~ntoken: ~w~n", [Token]),
+			io:format("~nUserPIDS: ~w~n", [UserPIDs]),
 
-	[genserver:request(Pid, {message_from_server, ChannelName, UserID, Token}) || Pid <- UserPIDs, Pid /= UserPID],
+			[genserver:request(Pid, {message_from_server, ChannelName, UserID, Token}) || Pid <- UserPIDs, Pid /= UserPID],
 	
 
-	io:format("messages sent \n"),
-	{ok, State}.
+			io:format("messages sent \n"),
+			{ok, State}
+	end.
+	
 
 initial_state(_Server) ->
     #server_st{users=[], channels = []}. %, messagepids=[]
