@@ -97,11 +97,8 @@ loop(St, debug) ->
 %%%% Incoming message
 %%%%%%%%%%%%%%%%%%%%%
 loop(St , _MsgFromClient) ->
-    This = self(),
-    io:fwrite("Receiving message ~w~n", [This]),
     {Channel, Name, Msg} = decompose_msg(_MsgFromClient),
     gen_server:call(list_to_atom(St#cl_st.gui), {msg_to_GUI, Channel, Name++"> "++Msg}),
-    io:format("Should be done writing.\n"),
     {ok, St}.
 
 
@@ -109,9 +106,6 @@ loop(St , _MsgFromClient) ->
 % decomposed in the parts needed to tell the GUI to display
 % it in the right chat room.
 decompose_msg({message_from_server, Channel, Nick, Token}) ->
-    io:format("message_from_server \n"),
-    io:format("message, nick: ~n~w", [Nick]),
-    io:format("message, channel: ~n~w", [Channel]),
     {Channel, Nick, Token}.
 
 
