@@ -48,19 +48,20 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 % Currently only represents the case where a user joins a channel that doesn't exist already.
 %
 request(State, {join, {UserID,UserPID}, ChannelName}) ->
+	ChannelAtom = list_to_atom(ChannelName),
 	ListOfChannels = State#server_st.channels,
 	ChannelToJoin = lists:member(ChannelName, ListOfChannels),
 	case ChannelToJoin of
 		%Channel doesn't exist
 		false ->
 			%Create new channel and add the user to it.
-			genserver:start(list_to_atom(ChannelName), channel:initial_state(ChannelName, {UserID,UserPID}), fun channel:loop/2 ),
-			NewChannelList = lists:append([ChannelName], ListOfChannels),
+			genserver:start(ChannelAtom, channel:initial_state(ChannelAtom, {UserID,UserPID}), fun channel:loop/2 ),
+			NewChannelList = lists:append([ChannelAtom], ListOfChannels),
 			%Add the channel to the list of channels and return it.
 			{ok, State#server_st{channels = NewChannelList}};
 		% Channel exists.
 		_asd ->
-			case genserver:request(list_to_atom(ChannelName), {join, {UserID,UserPID}}) of
+			case genserver:request(ChannelAtom, {join, {UserID,UserPID}}) of
 				%User is not a member of the channel
 				ok ->
 					{ok, State};
