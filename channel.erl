@@ -1,5 +1,5 @@
 -module (channel).
--export ([loop/2, request/2]).
+-export ([loop/2, request/2, initial_state/1]).
 -include_lib("./defs.hrl").
 
 loop(St, _Msg) ->
