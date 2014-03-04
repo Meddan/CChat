@@ -10,5 +10,5 @@
 % This record defines the structure of the 
 % server process. 
 % 
--record (channel, {name = "", users=[]}).
+-record (channel, {name, users=[]}).
 -record (server_st, {users=[], channels=[]}). %, messagepids=[]

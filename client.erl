@@ -106,7 +106,7 @@ loop(St , _MsgFromClient) ->
 % decomposed in the parts needed to tell the GUI to display
 % it in the right chat room.
 decompose_msg({message_from_server, Channel, Nick, Token}) ->
-    {Channel, Nick, Token}.
+    {atom_to_list(Channel), Nick, Token}.
 
 
 initial_state(Nick, GUIName) ->
