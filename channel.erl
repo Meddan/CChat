@@ -37,7 +37,8 @@ request(State, {message, {UserID,UserPID}, Token}) ->
 			%spawn( fun() ->end)
 			[ genserver:request(Pid, {message_from_server, State#channel.name, UserID, Token})  || Pid <- UserPIDs, Pid /= UserPID] end),
 			{ok, State}
-	end.
-
+	end;
+request(State, {user_exist, {UserID, UserPID}}) ->
+	{lists:member({UserID,UserPID}, State#channel.users), State}.
 initial_state(ChannelName, {UserID,UserPID}) -> 
 	#channel{name = ChannelName, users = [{UserID,UserPID}]}.
