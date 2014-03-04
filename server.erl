@@ -5,6 +5,7 @@
 
 loop(St, _Msg) ->
 	request(St, _Msg).
+
 %
 % User connecting to the server
 %
@@ -48,62 +49,25 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 %
 request(State, {join, {UserID,UserPID}, ChannelName}) ->
 	ListOfChannels = State#server_st.channels,
-	ChannelToJoin = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
+	ChannelToJoin = lists:member(ChannelName, ListOfChannels),
 	case ChannelToJoin of
 		%Channel doesn't exist
 		false ->
 			%Create new channel and add the user to it.
-			NewChannel = #channel{name = ChannelName, users = [{UserID,UserPID}] },
-			NewChannelList = lists:append([NewChannel], ListOfChannels),
+			genserver:start(list_to_atom(ChannelName), channel:initial_state(ChannelName), fun channel:loop/2 ),
+			NewChannelList = lists:append([ChannelName], ListOfChannels),
 			%Add the channel to the list of channels and return it.
 			{ok, State#server_st{channels = NewChannelList}};
 		% Channel exists.
 		_asd ->
-			case lists:member({UserID,UserPID}, ChannelToJoin#channel.users) of
+			case genserver:request(list_to_atom(ChannelName), {join, {UserID,UserPID}}) of
 				%User is not a member of the channel
-				false ->
-					%Add the user to the channel
-					ChangedChannel = ChannelToJoin#channel{users = lists:append(ChannelToJoin#channel.users, [{UserID,UserPID}])},
-					%Remove the old reference of the channel and add a new one.
-					{ok, State#server_st{channels = lists:append(lists:delete(ChannelToJoin, State#server_st.channels), [ChangedChannel])}};
+				ok ->
+					{ok, State};
 
 				% If the user is already a member of the channel.
-				true -> {{error,user_already_joined}, State}
+				_else -> {{error,user_already_joined}, State}
 			end
-		
-	end;
-
-%
-% User leaving a channel.
-%
-request(State, {leave, {UserID, UserPID}, ChannelName}) ->
-	ListOfChannels = State#server_st.channels,
-	ChannelToLeave = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
-	case lists:member({UserID,UserPID}, ChannelToLeave#channel.users) of 
-		false ->
-			{{error, user_not_joined}, State};
-		true ->
-			ChangedChannel = ChannelToLeave#channel{users = lists:delete({UserID,UserPID}, ChannelToLeave#channel.users)},
-			{ok, State#server_st{channels = lists:append(lists:delete(ChannelToLeave, State#server_st.channels), [ChangedChannel])}}
-	end;
-
-%
-% User sending a message to a channel
-%
-request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
-	ListOfChannels = State#server_st.channels,
-	ChannelToMessage = lists:keyfind(ChannelName,#channel.name, ListOfChannels),
-	case catch lists:member({UserID,UserPID}, ChannelToMessage#channel.users) of
-		false ->
-			{{error, user_not_joined}, State};
-		true -> 
-			spawn( fun() -> 
-			ListOfUsers = ChannelToMessage#channel.users,
-			UserIDs = lists:map(fun ({X, _}) -> X end, ListOfUsers),
-			UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
-			%spawn( fun() ->end)
-			[ genserver:request(Pid, {message_from_server, ChannelName, UserID, Token})  || Pid <- UserPIDs, Pid /= UserPID] end),
-			{ok, State}
 	end.
 	
 %Creates the initial state of the server
