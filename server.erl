@@ -19,7 +19,6 @@ request(State, {connect, {UserID,UserPID}}) -> %,MessagePID
 		true ->
 			{{error, user_already_connected}, State}
 	end;
-	
 
 %
 % User disconnecting from the server
@@ -55,7 +54,6 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 		false ->
 			%Create new channel and add the user to it.
 			NewChannel = #channel{name = ChannelName, users = [{UserID,UserPID}] },
-			io:format(NewChannel#channel.name),
 			NewChannelList = lists:append([NewChannel], ListOfChannels),
 			%Add the channel to the list of channels and return it.
 			{ok, State#server_st{channels = NewChannelList}};
@@ -74,6 +72,7 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 			end
 		
 	end;
+
 %
 % User leaving a channel.
 %
@@ -102,8 +101,8 @@ request(State, {message, {UserID,UserPID}, ChannelName, Token}) ->
 			ListOfUsers = ChannelToMessage#channel.users,
 			UserIDs = lists:map(fun ({X, _}) -> X end, ListOfUsers),
 			UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
-
-			[genserver:request(Pid, {message_from_server, ChannelName, UserID, Token}) || Pid <- UserPIDs, Pid /= UserPID] end),
+			%spawn( fun() ->end)
+			[ genserver:request(Pid, {message_from_server, ChannelName, UserID, Token})  || Pid <- UserPIDs, Pid /= UserPID] end),
 			{ok, State}
 	end.
 	

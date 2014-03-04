@@ -3,7 +3,7 @@
 -include_lib("./defs.hrl").
 
 start(Name, State, F) ->
-    Pid = spawn(fun() -> loop(State, F) end),
+    Pid = spawn(fun() ->  end),
     register(Name, Pid),
     Pid.
 
