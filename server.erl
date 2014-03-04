@@ -33,7 +33,7 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 			{{error, user_not_connected}, State};
 		true ->
 			UserInChannel = [ genserver:request(list_to_atom(Chan), {user_exist, {UserID,UserPID}}) || Chan <- State#server_st.channels],
-			case catch lists:member([true], UserInChannel) of
+			case catch lists:member(true, UserInChannel) of
 				true -> 
 					{{error, leave_channels_first}, State};
 				false ->
