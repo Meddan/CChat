@@ -63,7 +63,7 @@ loop(St, {leave, _Channel}) ->
 %%% Sending messages
 %%%%%%%%%%%%%%%%%%%%%
 loop(St, {msg_from_GUI, _Channel, _Msg}) ->
-    case genserver:request(list_to_atom(_Channel), {message, {St#cl_st.nick, self()}, _Channel, _Msg}) of
+    case genserver:request(list_to_atom(_Channel), {message, {St#cl_st.nick, self()}, _Msg}) of
         ok -> % User has joined channel in which it writes
             {ok, St};
         {error, user_not_joined} -> % User has not joined channel
