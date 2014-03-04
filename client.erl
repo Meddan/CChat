@@ -11,7 +11,7 @@ loop(St, {connect, _Server}) ->
         {'EXIT', Reason} -> % There is no server like this
             {{error, server_not_reached, "Could not reach server!"}, St};
         ok_connected -> % Connected
-            {ok, St#cl_st{server = _Server, connected = true}};
+            {ok, St#cl_st{server = list_to_atom(_Server), connected = true}};
         {error, user_already_connected} -> % Could not connect
             {{error, user_already_connected, "User with that name already connected"}, St}
     end;
@@ -22,7 +22,7 @@ loop(St, {connect, _Server}) ->
 loop(St, disconnect) ->
     case St#cl_st.connected of
         true -> % if connected
-            case catch genserver:request(list_to_atom(St#cl_st.server), {disconnect, {St#cl_st.nick, self()}}) of
+            case catch genserver:request(St#cl_st.server, {disconnect, {St#cl_st.nick, self()}}) of
                 {'EXIT', Reason} -> % Server could not be reached
                     {{error, server_not_reached, "Could not reach server"}, St};
                 ok -> % Disconnected
@@ -41,7 +41,7 @@ loop(St, disconnect) ->
 %%% Join
 %%%%%%%%%%%%%%
 loop(St,{join,_Channel}) ->
-    case genserver:request(list_to_atom(St#cl_st.server), {join, {St#cl_st.nick, self()}, _Channel}) of
+    case genserver:request(St#cl_st.server, {join, {St#cl_st.nick, self()}, _Channel}) of
         ok -> % Join went ok
             {ok, St};
         {error, user_already_joined} -> % User has already joined thic channel before
