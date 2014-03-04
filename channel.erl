@@ -1,5 +1,5 @@
 -module (channel).
--export ([loop/2, request/2, initial_state/1]).
+-export ([loop/2, request/2, initial_state/2]).
 -include_lib("./defs.hrl").
 
 loop(St, _Msg) ->
@@ -39,5 +39,5 @@ request(State, {message, {UserID,UserPID}, Token}) ->
 			{ok, State}
 	end.
 
-initial_state(ChannelName) -> 
-	#channel{name = ChannelName, users = []}.
+initial_state(ChannelName, {UserID,UserPID}) -> 
+	#channel{name = ChannelName, users = [{UserID,UserPID}]}.

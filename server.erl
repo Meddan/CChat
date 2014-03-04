@@ -54,7 +54,7 @@ request(State, {join, {UserID,UserPID}, ChannelName}) ->
 		%Channel doesn't exist
 		false ->
 			%Create new channel and add the user to it.
-			genserver:start(list_to_atom(ChannelName), channel:initial_state(ChannelName), fun channel:loop/2 ),
+			genserver:start(list_to_atom(ChannelName), channel:initial_state(ChannelName, {UserID,UserPID}), fun channel:loop/2 ),
 			NewChannelList = lists:append([ChannelName], ListOfChannels),
 			%Add the channel to the list of channels and return it.
 			{ok, State#server_st{channels = NewChannelList}};
