@@ -35,7 +35,7 @@ request(State, {message, {UserID,UserPID}, Token}) ->
 			ListOfUsers = State#channel.users,
 			UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
 			%spawn( fun() ->end)
-			[ genserver:request(Pid, {message_from_server, State#channel.name, UserID, Token})  || Pid <- UserPIDs, Pid /= UserPID] end),
+			[genserver:request(Pid, {message_from_server, State#channel.name, UserID, Token})  || Pid <- UserPIDs, Pid /= UserPID] end),
 			{ok, State}
 	end;
 request(State, {user_exist, {UserID, UserPID}}) ->
