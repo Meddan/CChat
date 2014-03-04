@@ -52,7 +52,7 @@ loop(St,{join,_Channel}) ->
 %%%% Leave
 %%%%%%%%%%%%%%%
 loop(St, {leave, _Channel}) ->
-    case genserver:request( list_to_atom(_Channel), {leave, {St#cl_st.nick, self()}, _Channel}) of 
+    case genserver:request( list_to_atom(_Channel), {leave, {St#cl_st.nick, self()}}) of 
         ok -> % User is in channel
             {ok, St};
         {error, user_not_joined} -> % User is not in channel
