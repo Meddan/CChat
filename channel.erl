@@ -31,15 +31,16 @@ request(State, {message, {UserID,UserPID}, Token}) ->
 		false ->
 			{{error, user_not_joined}, State};
 		true -> 
-			spawn( fun() -> 
-			ListOfUsers = State#channel.users,
+			spawn( fun() ->
+			ListOfUsers = lists:delete({UserID,UserPID}, State#channel.users ),
 			UserPIDs = lists:map(fun ({_, V}) -> V end, ListOfUsers),
-			%spawn( fun() ->end)
-			[genserver:request(Pid, {message_from_server, State#channel.name, UserID, Token})  || Pid <- UserPIDs, Pid /= UserPID] end),
+			lists:foreach(
+				fun(PID) ->
+					spawn( fun() -> genserver:request(PID, {message_from_server, State#channel.name, UserID, Token}) end) 
+				end, UserPIDs) end),
 			{ok, State}
 	end;
 request(State, {user_exist, {UserID, UserPID}}) ->
 	{lists:member({UserID,UserPID}, State#channel.users), State}.
-	
 initial_state(ChannelName, {UserID,UserPID}) -> 
 	#channel{name = ChannelName, users = [{UserID,UserPID}]}.

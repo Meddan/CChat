@@ -32,8 +32,7 @@ request(State, {disconnect, {UserID,UserPID}}) ->
 		not UserConnected ->	%if the user isn't connected.
 			{{error, user_not_connected}, State};
 		true ->
-			UserInChannel = [ genserver:request(Chan, {user_exist, {UserID,UserPID}}) || Chan <- State#server_st.channels],
-			case lists:member(true, UserInChannel) of
+			case lists:member(true, [genserver:request(Chan, {user_exist, {UserID,UserPID}}) || Chan <- State#server_st.channels]) of
 				true -> 
 					{{error, leave_channels_first}, State};
 				false ->
