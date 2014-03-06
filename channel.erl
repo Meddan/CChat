@@ -44,4 +44,4 @@ request(State, {user_exist, {UserID, UserPID}}) ->
 	{lists:member({UserID,UserPID}, State#channel.users), State}.
 	
 initial_state(ChannelName, {UserID,UserPID}) -> 
-	#channel{name = list_to_atom(ChannelName), users = [{UserID,UserPID}]}.
+	#channel{name = ChannelName, users = [{UserID,UserPID}]}.
