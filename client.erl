@@ -7,14 +7,15 @@
 %%%% Connect remote
 %%%%%%%%%%%%%%%
 loop(St, {connect, {_Server, Machine}}) ->
-    RemoteServer = {list_to_atom(_Server), list_to_atom(Machine)},
-    case catch net_adm:ping(list_to_atom(Machine)) of
+    RemServer = {list_to_atom(_Server), list_to_atom(Machine)}, 
+    RemMachine = list_to_atom(Machine),
+    case catch net_adm:ping(Machine) of
         pong ->
-            case catch (genserver:request(RemoteServer, {connect, {St#cl_st.nick, self()}})) of
+            case catch (genserver:request(RemServer, {connect, {St#cl_st.nick, self()}})) of
                 {'EXIT', Reason} -> % There is no server like this
                     {{error, server_not_reached, "Could not reach server!"}, St};
                 ok_connected -> % Connected
-                    {ok, St#cl_st{server = RemoteServer, connected = true}};
+                    {ok, St#cl_st{server = RemServer, connected = true, machine = RemMachine}};
                 {error, user_already_connected} -> % Could not connect
                     {{error, user_already_connected, "User with that name already connected"}, St}
             end;
@@ -71,7 +72,7 @@ loop(St,{join,_Channel}) ->
 %%%% Leave
 %%%%%%%%%%%%%%%
 loop(St, {leave, _Channel}) ->
-    case genserver:request( list_to_atom(_Channel), {leave, {St#cl_st.nick, self()}}) of 
+    case genserver:request({list_to_atom(_Channel), St#cl_st.machine}, {leave, {St#cl_st.nick, self()}}) of 
         ok -> % User is in channel
             {ok, St};
         {error, user_not_joined} -> % User is not in channel
@@ -82,7 +83,7 @@ loop(St, {leave, _Channel}) ->
 %%% Sending messages
 %%%%%%%%%%%%%%%%%%%%%
 loop(St, {msg_from_GUI, _Channel, _Msg}) ->
-    case genserver:request(list_to_atom(_Channel), {message, {St#cl_st.nick, self()}, _Msg}) of
+    case genserver:request({list_to_atom(_Channel), St#cl_st.machine}, {message, {St#cl_st.nick, self()}, _Msg}) of
         ok -> % User has joined channel in which it writes
             {ok, St};
         {error, user_not_joined} -> % User has not joined channel
