@@ -2,7 +2,6 @@
 
 -export([start/0, init/1, terminate/2,  code_change/3,
 	 handle_info/2, handle_call/3, handle_cast/2, handle_event/2]).
-% -compile(export_all).
 -behaviour(wx_object).
 -include_lib("wx/include/wx.hrl").
 
@@ -102,10 +101,19 @@ handle_event(#wx{ event = #wxCommand{type = command_text_enter, cmdString = Item
     trace(["Command:", Cmd]),
     case Cmd  of
 
+         %% Connecting to the server (Specifying the remote machine)
+         {connect_remote, Server, Machine} ->
+            write_channel(with_label(ClientName, ?SYSTEM), "* "++"Trying to connect to "++Server++" in machine "++Machine++"..."),
+            Result = catch_fatal (ClientName, Panel, fun () -> request(ClientName, {connect, {Server, Machine}}) end ),
+            case Result of
+                 ok     -> write_channel(with_label(ClientName, ?SYSTEM), "+ Connected!") ;
+                 error  -> ok
+            end ;
+
          %% Connecting to the server
          {connect, Server} ->
             write_channel(with_label(ClientName, ?SYSTEM), "* "++"Trying to connect to "++Server++"..."),
-            Result = catch_fatal (ClientName, Panel, fun () -> request(ClientName, {connect,Server}) end ),
+            Result = catch_fatal (ClientName, Panel, fun () -> request(ClientName, {connect, Server}) end ),
             case Result of
                  ok     -> write_channel(with_label(ClientName, ?SYSTEM), "+ Connected!") ;
                  error  -> ok
@@ -129,17 +137,18 @@ handle_event(#wx{ event = #wxCommand{type = command_text_enter, cmdString = Item
                  error  -> ok
             end ;
 
+         % /leave
          leave -> Channel = active_channel(with_label(ClientName,?NOTEBOOK)),
                   leave_channel(ClientName, Panel, Channel) ;
 
+         % /leave #channel
          {leave, Channel} -> leave_channel(ClientName, Panel, Channel) ;
 
          %% Sending a message
          {msg, String}     ->
             Channel = active_channel(with_label(ClientName,?NOTEBOOK)),
             case Channel of
-                 ?SYSTEM ->  write_channel(with_label(ClientName, ?SYSTEM), "- "++"Command not recognized"),
-                             write_channel(with_label(ClientName, ?SYSTEM), String) ;
+                 ?SYSTEM_NAME ->  write_channel(with_label(ClientName, ?SYSTEM), "- "++"Command not recognized: "++String) ;
                  _        -> Result = catch_fatal(ClientName, Panel,
                                                   fun () -> request(ClientName, {msg_from_GUI, Channel, String}) end ),
                              case Result of
@@ -171,17 +180,12 @@ handle_event(#wx{ event = #wxCommand{type = command_text_enter, cmdString = Item
     focus(with_label(ClientName, ?CMDLINE)),
     {noreply, St} ;
 
-
+% Clicking the X on a tab
 handle_event(#wx{ event = #wxAuiNotebook{type = command_auinotebook_button, selection = TabPos} },
              St = #state{ parent = Panel, client = ClientName }) ->
     Ntbk    = typed_search(with_label(ClientName, ?NOTEBOOK), wxAuiNotebook),
     Channel = wxAuiNotebook:getPageText(Ntbk,TabPos),
-    case Channel of
-        ?SYSTEM_NAME ->
-            write_channel(with_label(ClientName, ?SYSTEM), "- "++"Cannot close system tab") ;
-        _ ->
-            leave_channel(ClientName, Panel, Channel)
-    end,
+    leave_channel(ClientName, Panel, Channel),
     {noreply, St} ;
 
 handle_event(WX = #wx{}, State = #state{}) ->
@@ -265,11 +269,13 @@ active_channel(ID) ->
     Title = wxAuiNotebook:getPageText(Ntbk, PageNumber),
     Title.
 
-close_tab(ID, TabName) ->
-    Ntbk = typed_search(ID, wxAuiNotebook),
+close_tab(NotebookID, TabName) ->
+    Ntbk = typed_search(NotebookID, wxAuiNotebook),
     Max  = wxAuiNotebook:getPageCount(Ntbk),
     Tabs = [ {wxAuiNotebook:getPageText(Ntbk,N), N} || N <- lists:seq(0,Max-1) ],
     {_, PageNumber} = lists:keyfind(TabName, 1, Tabs),
+    Page = wxAuiNotebook:getPage(Ntbk,PageNumber),
+    wxWindow:destroyChildren(Page),
     wxAuiNotebook:removePage(Ntbk, PageNumber).
 
 write_channel(ID, String) ->
@@ -294,7 +300,7 @@ typed_search(ID, Cast) ->
 
 label(ClientID, ID, Widget) ->
     Label = join_ids(ClientID, ID),
-    Result = wxWindow:setId(Widget, Label),
+    _Result = wxWindow:setId(Widget, Label),
     % io:format("Setting label ~p to widget ~p, result ~p~n",[Label,Widget, Result]),
     ok.
 
@@ -311,16 +317,20 @@ join_ids(ClientId, Id) ->
     {N, _} = string:to_integer(S),
     N.
 
-% Channel name to ID
-% Concats ASCII codes for each charcacter into a mega integer
+% Concats ASCII codes for each character into a mega integer
 % channel_id("AAA") = 656565
 channel_id(ChannelName) ->
     S = lists:foldl(fun(S, Acc) -> io_lib:format("~p", [S])++Acc end, "", ChannelName),
     list_to_integer(lists:flatten(S)).
 
+% client_id("client_1234") = 1234
+% client_id(ClientName) ->
+%     {N, _} = string:to_integer(lists:sublist(ClientName,8,5)),
+%     N.
+
 %% Requests
 request(ClientName, Msg) ->
-    genserver:request(to_atom(ClientName), Msg).
+    genserver:request(to_atom(ClientName), Msg, 100000). % must be greater than timeout in genserver
 
 
 %% Errors
@@ -340,12 +350,11 @@ to_atom(String) ->
 %% Leave a channel
 leave_channel(ClientName, Panel, Channel) ->
     case Channel of
-         ?SYSTEM ->  write_channel(with_label(ClientName, ?SYSTEM), "- "++"Cannot leave a channel"),
-                     write_channel(with_label(ClientName, ?SYSTEM), "- "++"(be on a channel tab first)") ;
+         ?SYSTEM_NAME -> write_channel(with_label(ClientName, ?SYSTEM), "- "++"Cannot leave System tab") ;
          Channel -> Result = catch_fatal(ClientName, Panel,
                                          fun () -> request(ClientName, {leave, Channel}) end ),
                     case Result of
-                         ok    -> close_tab(with_label(ClientName,?NOTEBOOK), Channel),
+                         ok    -> close_tab(with_label(ClientName, ?NOTEBOOK), Channel),
                                   write_channel(with_label(ClientName, ?SYSTEM), "* "++"Left "++Channel) ;
                          error -> ok
                     end
