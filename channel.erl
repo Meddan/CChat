@@ -27,8 +27,10 @@ request(State, {leave, {UserID, UserPID}}) ->
 	end;
 
 request(State, {message, {UserID,UserPID}, Token}) ->
+
 	case catch lists:member({UserID,UserPID}, State#channel.users) of
 		false ->
+			%User is not in channel
 			{{error, user_not_joined}, State};
 		true -> 
 			spawn( fun() ->
