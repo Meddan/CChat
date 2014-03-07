@@ -4,6 +4,25 @@
 -include_lib("./defs.hrl").
 
 %%%%%%%%%%%%%%%
+%%%% Connect remote
+%%%%%%%%%%%%%%%
+loop(St, {connect, {_Server, Machine}}) ->
+    RemoteServer = {list_to_atom(_Server), list_to_atom(Machine)},
+    case catch net_adm:ping(RemoteServer) of
+        pong ->
+            case catch (genserver:request(RemoteServer, {connect, {St#cl_st.nick, self()}})) of
+                {'EXIT', Reason} -> % There is no server like this
+                    {{error, server_not_reached, "Could not reach server!"}, St};
+                ok_connected -> % Connected
+                    {ok, St#cl_st{server = RemoteServer, connected = true}};
+                {error, user_already_connected} -> % Could not connect
+                    {{error, user_already_connected, "User with that name already connected"}, St}
+            end;
+        pang ->
+            {{error, server_not_reached, "Could not reach server!"}, St}
+    end;
+
+%%%%%%%%%%%%%%%
 %%%% Connect
 %%%%%%%%%%%%%%%
 loop(St, {connect, _Server}) ->
