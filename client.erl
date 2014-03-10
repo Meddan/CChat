@@ -74,6 +74,7 @@ loop(St,{join,_Channel}) ->
 loop(St, {leave, _Channel}) ->
     case St#cl_st.machine of
         false ->
+            io:format("Connected to local, leaving channel"),
             case genserver:request(list_to_atom(_Channel), {leave, {St#cl_st.nick, self()}}) of 
                 ok -> % User is in channel
                     {ok, St};
@@ -81,6 +82,7 @@ loop(St, {leave, _Channel}) ->
                     {{error, user_not_joined, "You have not joined this channel!"}, St}
             end;
         _remote ->
+            io:format("Connected to remote, leaving channel"),
             case genserver:request({list_to_atom(_Channel), St#cl_st.machine}, {leave, {St#cl_st.nick, self()}}) of 
                 ok -> % User is in channel
                     {ok, St};
@@ -95,6 +97,7 @@ loop(St, {leave, _Channel}) ->
 loop(St, {msg_from_GUI, _Channel, _Msg}) ->
     case St#cl_st.machine of
         false ->
+            io:format("Connected to local, sending message"),
             case genserver:request(list_to_atom(_Channel), {message, {St#cl_st.nick, self()}, _Msg}) of
                 ok -> % User has joined channel in which it writes
                     {ok, St};
@@ -102,6 +105,7 @@ loop(St, {msg_from_GUI, _Channel, _Msg}) ->
                     {{error, user_not_joined, "You have not joined this channel!"}, St}
             end;
         _remote ->
+            io:format("Connected to remote, sending message"),
             case genserver:request({list_to_atom(_Channel), St#cl_st.machine}, {message, {St#cl_st.nick, self()}, _Msg}) of
                 ok -> % User has joined channel in which it writes
                     {ok, St};
