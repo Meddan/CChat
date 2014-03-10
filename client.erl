@@ -9,7 +9,7 @@
 loop(St, {connect, {_Server, Machine}}) ->
     RemServer = {list_to_atom(_Server), list_to_atom(Machine)}, 
     RemMachine = list_to_atom(Machine),
-    case catch net_adm:ping(Machine) of
+    case catch net_adm:ping(RemMachine) of
         pong ->
             case catch (genserver:request(RemServer, {connect, {St#cl_st.nick, self()}})) of
                 {'EXIT', Reason} -> % There is no server like this
